@@ -13,7 +13,53 @@ class TriviaTicker
 	end
 end
 
-bot = Cinch::Bot.new do
+class TriviaBot < Cinch::Bot
+	def trivia_init
+		load_questions
+	end
+
+	def load_questions
+		@questions = []
+
+		db = File.open('questions.txt','r');
+		db.read.lines.each do |line|
+			@questions << Hash[ [:question, :answer].zip( line.strip.split("\t") ) ]
+		end
+		db.close
+
+		shuffle
+	end
+	
+	def shuffle
+		@question_idx = 0
+		@questions.shuffle!
+	end
+
+	def start_game m
+		return if @active
+
+		@active = true
+		@channel = m.channel
+		
+		start_question
+	end
+
+	def start_question
+		shuffle if @question_idx >= @questions.length
+
+		@question = @questions[@question_idx]
+		@question_idx += 1
+
+		Channel(@channel).send @question[:question]
+	end
+
+	def tick
+		return unless @active
+	end
+end
+
+bot = TriviaBot.new do
+	trivia_init
 
 	configure do |c|
 		c.nick = "derp"
@@ -28,15 +74,13 @@ bot = Cinch::Bot.new do
 	end
 
 	on :channel, /^!start$/ do |m|
-		@channel = m.channel
-		@active = true
-
+		bot.start_game m
 	end
 
 	on :tick do
-		next unless @active
-		Channel(@channel).send 'derp'
+		bot.tick
 	end
+
 end
 
 bot.start
