@@ -17,6 +17,8 @@ class TriviaBot < Cinch::Bot
 
 	def trivia_init
 		load_questions
+		@question_time_limit = 60
+		@question_warn_times = [30,15]
 	end
 
 	def load_questions
@@ -41,11 +43,13 @@ class TriviaBot < Cinch::Bot
 
 		@channel = m.channel
 		start_question
+		@timeout_count = 0
 		@active = true
 	end
 
 	def start_question
-		next_question	
+		next_question
+		@question_time = @question_time_limit
 		Channel(@channel).send @question[:question]
 	end
 
@@ -53,8 +57,9 @@ class TriviaBot < Cinch::Bot
 		return unless @active
 		
 		if t == @question[:answer]
+			@timeout_count = 0
 			m.reply("Correct!")
-			start_question
+			start_questionc
 		end
 	end
 
@@ -65,8 +70,31 @@ class TriviaBot < Cinch::Bot
 		@question_idx += 1
 	end
 
+	def check_question_time
+		@question_time -= 1
+
+		if @question_time <= 0
+			question_timeout
+		elsif @question_warn_times.include? @question_time
+			Channel(@channel).send "%d seconds remain..." % @question_time
+		end
+	end
+
+	def question_timeout
+		Channel(@channel).send "Timeout! The answer was %s" % @question[:answer]
+		@timeout_count += 1
+		
+		if @timeout_count >= 3
+			Channel(@channel).send("Ending game after 3 consecutive timeouts!")
+			@active = false
+		else
+			start_question
+		end
+	end
+
 	def tick
 		return unless @active
+		check_question_time
 	end
 end
 
