@@ -14,6 +14,7 @@ class TriviaTicker
 end
 
 class TriviaBot < Cinch::Bot
+
 	def trivia_init
 		load_questions
 	end
@@ -45,12 +46,15 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def start_question
+		next_question	
+		Channel(@channel).send @question[:question]
+	end
+
+	def next_question
 		shuffle if @question_idx >= @questions.length
 
 		@question = @questions[@question_idx]
 		@question_idx += 1
-
-		Channel(@channel).send @question[:question]
 	end
 
 	def tick
