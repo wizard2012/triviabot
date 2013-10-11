@@ -39,15 +39,23 @@ class TriviaBot < Cinch::Bot
 	def start_game m
 		return if @active
 
-		@active = true
 		@channel = m.channel
-		
 		start_question
+		@active = true
 	end
 
 	def start_question
 		next_question	
 		Channel(@channel).send @question[:question]
+	end
+
+	def check_answer(m,t)
+		return unless @active
+		
+		if t == @question[:answer]
+			m.reply("Correct!")
+			start_question
+		end
 	end
 
 	def next_question
@@ -79,6 +87,10 @@ bot = TriviaBot.new do
 
 	on :channel, /^!start$/ do |m|
 		bot.start_game m
+	end
+
+	on :channel, /^([^!].*)$/ do |m,t|
+		bot.check_answer m,t
 	end
 
 	on :tick do
