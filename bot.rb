@@ -58,7 +58,7 @@ class TriviaBot < Cinch::Bot
 		
 		if t == @question[:answer]
 			@timeout_count = 0
-			m.reply("Correct!")
+			m.reply("Correct! %s wins!" % m.user.nick)
 			start_questionc
 		end
 	end
