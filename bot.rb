@@ -19,6 +19,25 @@ class TriviaBot < Cinch::Bot
 		load_questions
 		@question_time_limit = 60
 		@question_warn_times = [30,15]
+
+		@scores = []
+	end
+
+	def get_score_entry(nick)
+		entries = @scores.select {|entry| entry[:nick].downcase == nick.downcase}
+		return nil if entries.empty?
+		return entries.first
+	end
+
+	def add_score(nick,score)
+		entry = get_score_entry(nick)
+
+		unless entry	
+			entry = {:nick => nick, :score => 0}
+			@scores << entry
+		end
+
+		entry[:score] += score
 	end
 
 	def load_questions
@@ -47,6 +66,15 @@ class TriviaBot < Cinch::Bot
 		@active = true
 	end
 
+	def stats(m)
+		scores = @scores.sort_by {|score| [score[:score]]}
+		rank = 1
+		scores.each do |entry|
+			m.reply("%d. %s %d" % [rank,entry[:nick],entry[:score]])
+			rank+=1
+		end
+	end
+
 	def start_question
 		next_question
 		@question_time = @question_time_limit
@@ -59,7 +87,8 @@ class TriviaBot < Cinch::Bot
 		if t == @question[:answer]
 			@timeout_count = 0
 			m.reply("Correct! %s wins!" % m.user.nick)
-			start_questionc
+			add_score m.user.nick, 1
+			start_question
 		end
 	end
 
@@ -115,6 +144,10 @@ bot = TriviaBot.new do
 
 	on :channel, /^!start$/ do |m|
 		bot.start_game m
+	end
+
+	on :channel, /^!stats$/ do |m|
+		bot.stats m
 	end
 
 	on :channel, /^([^!].*)$/ do |m,t|
