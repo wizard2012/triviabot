@@ -96,9 +96,12 @@ class TriviaHints
 		(0..@hint_str.length).each do |i|
 			idx << i if '*' == @hint_str[i]
 		end
+	
+		return if idx.size <= 1
 
-		#unmask 30%...
-		idx.sample(idx.length/3).each{|i| @hint_str[i] = get_answer[i]}
+		unmask_count = idx.length/3
+		unmask_count = 1 if unmask_count == 0
+		idx.sample(unmask_count).each{|i| @hint_str[i] = get_answer[i]}
 	end
 
 	def get_answer
