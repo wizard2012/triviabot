@@ -109,16 +109,22 @@ class TriviaBot < Cinch::Bot
 		end
 	end
 
-	def question_timeout
-		Channel(@channel).send "Timeout! The answer was %s" % @question[:answer]
-		@timeout_count += 1
-		
+	def game_timeout 
 		if @timeout_count >= 3
 			Channel(@channel).send("Ending game after 3 consecutive timeouts!")
 			@active = false
+			return true
 		else
-			start_question
+			return false
 		end
+	end
+
+	def question_timeout
+
+		Channel(@channel).send "Timeout! The answer was %s" % @question[:answer]
+		@timeout_count += 1
+		
+		start_question unless game_timeout
 	end
 
 	def tick
