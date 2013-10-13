@@ -13,13 +13,46 @@ class TriviaTicker
 	end
 end
 
+class TriviaHints
+	include Cinch::Helpers
+	def initialize(bot) 
+		@bot = bot
+	end
+
+	def start_question
+		@hint_count = 0
+		@hint_str = nil
+	end
+
+	def timeout_warn
+		answer = @bot.question[:answer].first
+
+		if @hint_count == 0 or not @hint_str or answer.length < 5
+			@hint_str = answer.gsub(/[^ ]/, '*')
+		else 
+			idx = []
+
+			(0..@hint_str.length).each do |i|
+				idx << i if '*' == @hint_str[i]
+			end
+			
+			#unmask 30%...
+			idx.sample(idx.length/3).each{|i| @hint_str[i] = answer[i]}
+		end
+		@hint_count += 1
+		@bot.chanmsg "%s: %s" % [Format(:yellow, "Hint"), @hint_str]
+	end
+end
+
 class TriviaBot < Cinch::Bot
+	attr_reader	:question
 
 	def trivia_init
 		@question_time_limit = 60
 		@question_warn_times = [45,30,15]
 
 		@scores = []
+		@trivia_plugins = [TriviaHints.new(self)]
 	end
 
 	def get_score_entry(nick)
@@ -63,16 +96,33 @@ class TriviaBot < Cinch::Bot
 
 	def start_question
 		next_question
-		@hint_count = 0
-		@hint_str = nil
 		@question_time = @question_time_limit
+		
+		fire_event :start_question
+
 		send_question
 	end
 
-	def send_question
-		Channel(@channel).send Format(:green, ">>> %s" % [@question[:question]])
+	def fire_event(event)
+		puts "event: " +String(event)
+		@trivia_plugins.each do |mod|
+			next unless mod.respond_to? event
+			begin
+				puts "firing: "+String(mod)
+				mod.send event
+			rescue
+				puts $!,$@
+			end
+		end
 	end
 
+	def chanmsg(msg)
+		Channel(@channel).send msg
+	end
+		
+	def send_question
+		chanmsg Format(:green, ">>> %s" % [@question[:question]])
+	end
 
 	def check_answer(m,t)
 		return unless @active
@@ -96,28 +146,6 @@ class TriviaBot < Cinch::Bot
 		end
 	end
 
-	def do_hint
-		return unless @active
-
-		answer = @question[:answer].first
-
-		if @hint_count == 0 or not @hint_str or answer.length < 5
-			@hint_str = answer.gsub(/[^ ]/, '*')
-		else 
-			idx = []
-
-			(0..@hint_str.length).each do |i|
-				idx << i if '*' == @hint_str[i]
-			end
-			
-			#unmask 30%...
-			idx.sample(idx.length/3).each{|i| @hint_str[i] = answer[i]}
-		end
-		@hint_count += 1
-		Channel(@channel).send "%s: %s" % [Format(:yellow, "Hint"), @hint_str]
-
-	end
-
 	def check_question_time
 		@question_time -= 1
 	
@@ -125,7 +153,7 @@ class TriviaBot < Cinch::Bot
 			question_timeout
 		elsif @question_warn_times.include? @question_time
 			Channel(@channel).send "%s %d seconds remain..." % [Format(:yellow, '***'),@question_time]
-			do_hint
+			fire_event :timeout_warn
 		end
 	end
 
