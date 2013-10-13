@@ -67,9 +67,9 @@ class TriviaStreak
 		if @streak == 2
 			@bot.chanact "hands %s beer!" % [nick]
 		elsif @streak == 3
-			@bot.chanmsg "%s is on fire: %d question streak!" % [nick, @streak]
+			@bot.chanmsg "%s is on fire: %d answer streak!" % [nick, @streak]
 		elsif @streak == 5
-			@bot.chanmsg "%d questions in a row!?!? %s is UNSTOPPABLE!" % [@streak, nick]
+			@bot.chanmsg "%d answers in a row!?!? %s is UNSTOPPABLE!" % [@streak, nick]
 		end
 	end
 
