@@ -213,6 +213,7 @@ class TriviaBot < Cinch::Bot
 
 	def check_answer(m,t)
 		return unless @active
+		@timeout_count = 0
 		@question[:answer].each do |a|
 			if normalize_answer(a) == normalize_answer(t)
 				@question[:answer].delete a if @kaos
@@ -223,8 +224,6 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def question_answered(nick)
-		@timeout_count = 0
-
 		add_score nick, 1
 		fire_event :question_answered, nick
 
