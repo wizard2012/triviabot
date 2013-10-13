@@ -56,12 +56,21 @@ class TriviaBot < Cinch::Bot
 			rank+=1
 		end
 	end
+	
+	def repeat(m)
+		send_question
+	end	
 
 	def start_question
 		next_question
 		@question_time = @question_time_limit
+		send_question
+	end
+
+	def send_question
 		Channel(@channel).send Format(:green, ">>> %s" % [@question[:question]])
 	end
+
 
 	def check_answer(m,t)
 		return unless @active
@@ -137,6 +146,10 @@ bot = TriviaBot.new do
 
 	on :channel, /^!start$/ do |m|
 		bot.start_game m
+	end
+
+	on :channel, /^!repeat$/ do |m|
+		bot.repeat m
 	end
 
 	on :channel, /^!stats$/ do |m|
