@@ -13,6 +13,39 @@ class TriviaTicker
 	end
 end
 
+class TriviaStreak
+	include Cinch::Helpers
+
+	def initialize(bot)
+		@bot = bot
+	end
+
+	def question_answered(nick)
+		@streak ||= 0
+		@nick ||= nick
+		
+		if @nick.downcase != nick.downcase
+			@nick = nick
+			@streak = 0
+		end
+
+		@streak += 1
+
+		if @streak == 2
+			@bot.chanact "hands %s beer!" % [nick]
+		elsif @streak == 3
+			@bot.chanmsg "%s is on fire: %d question streak!" % [nick, @streak]
+		elsif @streak == 5
+			@bot.chanmsg "%d questions in a row!?!? %s is UNSTOPPABLE!" % [@streak, nick]
+		end
+	end
+
+	def question_timeout
+		@nick = nil
+		@streak = nil
+	end
+end
+
 class TriviaHints
 	include Cinch::Helpers
 	def initialize(bot) 
@@ -60,7 +93,7 @@ class TriviaBot < Cinch::Bot
 		@question_warn_times = [45,30,15]
 
 		@scores = []
-		@trivia_plugins = [TriviaHints.new(self)]
+		@trivia_plugins = [TriviaHints.new(self), TriviaStreak.new(self)]
 	end
 
 	def get_score_entry(nick)
@@ -111,11 +144,11 @@ class TriviaBot < Cinch::Bot
 		send_question
 	end
 
-	def fire_event(event)
+	def fire_event(event,*args)
 		@trivia_plugins.each do |mod|
 			next unless mod.respond_to? event
 			begin
-				mod.send event
+				mod.send event, *args
 			rescue
 				#@todo log this
 				puts $!,$@
@@ -126,20 +159,27 @@ class TriviaBot < Cinch::Bot
 	def chanmsg(msg)
 		Channel(@channel).send msg
 	end
-	
+
+	def chanact(msg)
+		Channel(@channel).action msg
+	end
+
 	def send_question
 		chanmsg Format(:green, ">>> %s" % [@question[:question]])
 	end
 
 	def check_answer(m,t)
 		return unless @active
-		
-		if @question[:answer].each{|a| a.strip!;a.downcase!}.include? t.strip.downcase
-			@timeout_count = 0
-			m.reply("%s %s wins!" % [Format(:blue,"Correct!"),m.user.nick])
-			add_score m.user.nick, 1
-			start_question
-		end
+		question_answered(m.user.nick) if @question[:answer].each{|a| a.strip!;a.downcase!}.include? t.strip.downcase
+	end
+
+	def question_answered(nick)
+		@timeout_count = 0
+		chanmsg "%s %s wins!" % [Format(:blue,"Correct!"), nick]
+		add_score nick, 1
+		fire_event :question_answered, nick
+		start_question
+
 	end
 
 	def next_question
@@ -179,6 +219,8 @@ class TriviaBot < Cinch::Bot
 		chanmsg "%s The answer is: %s" % [Format(:red,'Timeout!'), Format(:green,@question[:answer].first)]
 		@timeout_count += 1
 		
+		fire_event :question_timeout
+
 		start_question unless game_timeout
 	end
 
