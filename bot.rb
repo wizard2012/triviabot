@@ -126,7 +126,7 @@ class TriviaBot < Cinch::Bot
 	def chanmsg(msg)
 		Channel(@channel).send msg
 	end
-		
+	
 	def send_question
 		chanmsg Format(:green, ">>> %s" % [@question[:question]])
 	end
