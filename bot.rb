@@ -207,17 +207,35 @@ class TriviaBot < Cinch::Bot
 		chanmsg Format(:green, ">>> %s" % [@question[:question]])
 	end
 
+	def normalize_answer(a)
+		a.strip.downcase
+	end
+
 	def check_answer(m,t)
 		return unless @active
-		question_answered(m.user.nick) if @question[:answer].each{|a| a.strip!;a.downcase!}.include? t.strip.downcase
+		@question[:answer].each do |a|
+			if normalize_answer(a) == normalize_answer(t)
+				@question[:answer].delete a if @kaos
+				question_answered(m.user.nick)
+				return
+			end
+		end
 	end
 
 	def question_answered(nick)
 		@timeout_count = 0
-		chanmsg "%s %s wins!" % [Format(:blue,"Correct!"), nick]
+
 		add_score nick, 1
 		fire_event :question_answered, nick
-		start_question
+
+		if @kaos
+			remain = @question[:answer].size
+			chanmsg "Good job, %s! %d answers remain." % [nick,remain]
+			start_question if remain == 0
+		else
+			chanmsg "%s %s wins!" % [Format(:blue,"Correct!"), nick]
+			start_question
+		end
 	end
 
 	def next_question
@@ -227,6 +245,12 @@ class TriviaBot < Cinch::Bot
 			pcs = questions.split("\n").shuffle.first.strip.split("\t")
 
 			@question = Hash[ [:question, :answer].zip( [pcs.first, pcs.drop(1)] ) ]
+		end
+
+		if @question[:question].start_with? 'KAOS:'
+			@kaos = true
+		else
+			@kaos = false
 		end
 	end
 
