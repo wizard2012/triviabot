@@ -159,14 +159,14 @@ class TriviaBot < Cinch::Bot
 		if @question_time <= 0
 			question_timeout
 		elsif @question_warn_times.include? @question_time
-			Channel(@channel).send "%s %d seconds remain..." % [Format(:yellow, '***'),@question_time]
+			chanmsg "%s %d seconds remain..." % [Format(:yellow, '***'),@question_time]
 			fire_event :timeout_warn
 		end
 	end
 
 	def game_timeout 
 		if @timeout_count >= 3
-			Channel(@channel).send("Ending game after 3 consecutive timeouts!")
+			chanmsg "Ending game after 3 consecutive timeouts!"
 			@active = false
 			return true
 		else
@@ -176,7 +176,7 @@ class TriviaBot < Cinch::Bot
 
 	def question_timeout
 
-		Channel(@channel).send "%s The answer is: %s" % [Format(:red,'Timeout!'), Format(:green,@question[:answer].first)]
+		chanmsg "%s The answer is: %s" % [Format(:red,'Timeout!'), Format(:green,@question[:answer].first)]
 		@timeout_count += 1
 		
 		start_question unless game_timeout
