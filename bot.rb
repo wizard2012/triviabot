@@ -89,11 +89,10 @@ class TriviaBot < Cinch::Bot
 		File.open(Dir.glob('questions/*.txt').shuffle.first,'r') do |file| 
 			questions = file.read
 
-			questions.lines.with_index(rand questions.size) do |q,idx|
-				pcs = q.strip.split("\t")
-				@question = Hash[ [:question, :answer].zip( [pcs.first, pcs.drop(1)] ) ]
-				break
-			end
+			pcs = questions.split("\n").shuffle.first.strip.split("\t")
+
+			@question = Hash[ [:question, :answer].zip( [pcs.first, pcs.drop(1)] ) ]
+			break
 		end
 	end
 
