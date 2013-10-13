@@ -24,21 +24,29 @@ class TriviaHints
 		@hint_str = nil
 	end
 
-	def timeout_warn
-		answer = @bot.question[:answer].first
+	def unmask_hint
+		idx = []
 
-		if @hint_count == 0 or not @hint_str or answer.length < 5
-			@hint_str = answer.gsub(/[^ ]/, '*')
-		else 
-			idx = []
-
-			(0..@hint_str.length).each do |i|
-				idx << i if '*' == @hint_str[i]
-			end
-			
-			#unmask 30%...
-			idx.sample(idx.length/3).each{|i| @hint_str[i] = answer[i]}
+		(0..@hint_str.length).each do |i|
+			idx << i if '*' == @hint_str[i]
 		end
+			
+		#unmask 30%...
+		idx.sample(idx.length/3).each{|i| @hint_str[i] = get_answer[i]}
+	end
+
+	def get_answer
+		@bot.question[:answer].first
+	end
+
+	def timeout_warn
+
+		if @hint_count == 0 or not @hint_str or get_answer.length < 5
+			@hint_str = get_answer.gsub(/[^ ]/, '*')
+		else 
+			unmask_hint
+		end
+
 		@hint_count += 1
 		@bot.chanmsg "%s: %s" % [Format(:yellow, "Hint"), @hint_str]
 	end
