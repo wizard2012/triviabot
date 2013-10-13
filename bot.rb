@@ -60,7 +60,7 @@ class TriviaBot < Cinch::Bot
 	def start_question
 		next_question
 		@question_time = @question_time_limit
-		Channel(@channel).send @question[:question]
+		Channel(@channel).send Format(:green, ">>> %s" % [@question[:question]])
 	end
 
 	def check_answer(m,t)
@@ -68,7 +68,7 @@ class TriviaBot < Cinch::Bot
 		
 		if @question[:answer].include? t.strip
 			@timeout_count = 0
-			m.reply("Correct! %s wins!" % m.user.nick)
+			m.reply("%s %s wins!" % [Format(:blue,"Correct!"),m.user.nick])
 			add_score m.user.nick, 1
 			start_question
 		end
@@ -92,7 +92,7 @@ class TriviaBot < Cinch::Bot
 		if @question_time <= 0
 			question_timeout
 		elsif @question_warn_times.include? @question_time
-			Channel(@channel).send "%d seconds remain..." % @question_time
+			Channel(@channel).send "%s %d seconds remain..." % [Format(:yellow, '***'),@question_time]
 		end
 	end
 
@@ -108,7 +108,7 @@ class TriviaBot < Cinch::Bot
 
 	def question_timeout
 
-		Channel(@channel).send "Timeout! The answer was %s" % @question[:answer]
+		Channel(@channel).send "%s The answer is: %s" % [Format(:red,'Timeout!'), Format(:green,@question[:answer].first)]
 		@timeout_count += 1
 		
 		start_question unless game_timeout
