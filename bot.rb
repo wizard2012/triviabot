@@ -13,6 +13,39 @@ class TriviaTicker
 	end
 end
 
+class TriviaTaunter
+	def initialize(bot)
+		@bot = bot
+		@idle = 0
+	end
+
+	def start_game
+		reset_idle
+	end
+
+	def reset_idle
+		@idle = 0
+	end
+
+	def tick
+		return if @bot.active
+		@idle += 1
+
+		taunt if @idle >= 900
+	end
+	
+	def taunt
+		reset_idle
+		first = @bot.get_leaderboard.first
+
+		if first
+			@bot.chanmsg "%s is in first with %d points. You should !start a game and put him in his place!" % [first[:nick],first[:score]]
+		else
+			@bot.chanmsg "The leaderboard is empty. You should !start a game and grab first place!"
+		end
+	end
+end
+
 class TriviaStreak
 	include Cinch::Helpers
 
@@ -86,13 +119,15 @@ end
 
 class TriviaBot < Cinch::Bot
 	attr_reader	:question
+	attr_reader :active
 
 	def trivia_init
+		@channel = '#derp'
 		@question_time_limit = 60
 		@question_warn_times = [45,30,15]
 
 		@scores = []
-		@trivia_plugins = [TriviaHints.new(self), TriviaStreak.new(self)]
+		@trivia_plugins = [TriviaHints.new(self), TriviaStreak.new(self), TriviaTaunter.new(self)]
 	end
 
 	def get_score_entry(nick)
@@ -114,17 +149,22 @@ class TriviaBot < Cinch::Bot
 
 	def start_game m
 		return if @active
-
-		@channel = m.channel
+		
+		#@channel = m.channel
 		start_question
 		@timeout_count = 0
 		@active = true
+
+		fire_event :start_game
+	end
+
+	def get_leaderboard
+		@scores.sort_by {|score| [score[:score]]}
 	end
 
 	def stats(m)
-		scores = @scores.sort_by {|score| [score[:score]]}
 		rank = 1
-		scores.each do |entry|
+		get_leaderboard.each do |entry|
 			m.reply("%d. %s %d" % [rank,entry[:nick],entry[:score]])
 			rank+=1
 		end
@@ -191,6 +231,8 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def check_question_time
+		return unless @active
+
 		@question_time -= 1
 	
 		if @question_time <= 0
@@ -221,14 +263,15 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def tick
-		return unless @active
+		fire_event :tick
+
 		check_question_time
 	end
 end
 
 bot = TriviaBot.new do
 	trivia_init
-
+	
 	configure do |c|
 		c.nick = "derp"
 		c.server = "irc.consental.com"
