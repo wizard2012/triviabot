@@ -66,7 +66,7 @@ class TriviaBot < Cinch::Bot
 	def check_answer(m,t)
 		return unless @active
 		
-		if @question[:answer].include? t
+		if @question[:answer].include? t.strip
 			@timeout_count = 0
 			m.reply("Correct! %s wins!" % m.user.nick)
 			add_score m.user.nick, 1
