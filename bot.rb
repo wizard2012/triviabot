@@ -159,7 +159,7 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def get_leaderboard
-		@scores.sort_by {|score| [score[:score]]}
+		@scores.sort_by {|score| [-score[:score]]}
 	end
 
 	def stats(m)
