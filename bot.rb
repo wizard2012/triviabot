@@ -17,7 +17,7 @@ class TriviaBot < Cinch::Bot
 
 	def trivia_init
 		@question_time_limit = 60
-		@question_warn_times = [30,15]
+		@question_warn_times = [45,30,15]
 
 		@scores = []
 	end
@@ -63,6 +63,8 @@ class TriviaBot < Cinch::Bot
 
 	def start_question
 		next_question
+		@hint_count = 0
+		@hint_str = nil
 		@question_time = @question_time_limit
 		send_question
 	end
@@ -95,13 +97,36 @@ class TriviaBot < Cinch::Bot
 		end
 	end
 
+	def do_hint
+		return unless @active
+
+		answer = @question[:answer].first
+
+		if @hint_count == 0 or not @hint_str or answer.length < 5
+			@hint_str = answer.gsub(/[^ ]/, '*')
+		else 
+			idx = []
+
+			(0..@hint_str.length).each do |i|
+				idx << i if '*' == @hint_str[i]
+			end
+			
+			#unmask 30%...
+			idx.sample(idx.length/3).each{|i| @hint_str[i] = answer[i]}
+		end
+		@hint_count += 1
+		Channel(@channel).send "%s: %s" % [Format(:yellow, "Hint"), @hint_str]
+
+	end
+
 	def check_question_time
 		@question_time -= 1
-
+	
 		if @question_time <= 0
 			question_timeout
 		elsif @question_warn_times.include? @question_time
 			Channel(@channel).send "%s %d seconds remain..." % [Format(:yellow, '***'),@question_time]
+			do_hint
 		end
 	end
 
