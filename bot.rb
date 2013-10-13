@@ -16,7 +16,6 @@ end
 class TriviaBot < Cinch::Bot
 
 	def trivia_init
-		load_questions
 		@question_time_limit = 60
 		@question_warn_times = [30,15]
 
@@ -38,23 +37,6 @@ class TriviaBot < Cinch::Bot
 		end
 
 		entry[:score] += score
-	end
-
-	def load_questions
-		@questions = []
-
-		db = File.open('questions/default.txt','r');
-		db.read.lines.each do |line|
-			@questions << Hash[ [:question, :answer].zip( line.strip.split("\t") ) ]
-		end
-		db.close
-
-		shuffle
-	end
-	
-	def shuffle
-		@question_idx = 0
-		@questions.shuffle!
 	end
 
 	def start_game m
@@ -84,7 +66,7 @@ class TriviaBot < Cinch::Bot
 	def check_answer(m,t)
 		return unless @active
 		
-		if t == @question[:answer]
+		if @question[:answer].include? t
 			@timeout_count = 0
 			m.reply("Correct! %s wins!" % m.user.nick)
 			add_score m.user.nick, 1
@@ -93,10 +75,15 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def next_question
-		shuffle if @question_idx >= @questions.length
+		File.open(Dir.glob('questions/*.txt').shuffle.first,'r') do |file| 
+			questions = file.read
 
-		@question = @questions[@question_idx]
-		@question_idx += 1
+			questions.lines.with_index(rand questions.size) do |q,idx|
+				pcs = q.strip.split("\t")
+				@question = Hash[ [:question, :answer].zip( [pcs.first, pcs.drop(1)] ) ]
+				break
+			end
+		end
 	end
 
 	def check_question_time
