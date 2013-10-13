@@ -63,7 +63,7 @@ class TriviaHints
 		(0..@hint_str.length).each do |i|
 			idx << i if '*' == @hint_str[i]
 		end
-			
+
 		#unmask 30%...
 		idx.sample(idx.length/3).each{|i| @hint_str[i] = get_answer[i]}
 	end
@@ -73,7 +73,6 @@ class TriviaHints
 	end
 
 	def timeout_warn
-
 		if @hint_count == 0 or not @hint_str or get_answer.length < 5
 			@hint_str = get_answer.gsub(/[^ ]/, '*')
 		else 
@@ -179,7 +178,6 @@ class TriviaBot < Cinch::Bot
 		add_score nick, 1
 		fire_event :question_answered, nick
 		start_question
-
 	end
 
 	def next_question
@@ -189,7 +187,6 @@ class TriviaBot < Cinch::Bot
 			pcs = questions.split("\n").shuffle.first.strip.split("\t")
 
 			@question = Hash[ [:question, :answer].zip( [pcs.first, pcs.drop(1)] ) ]
-			break
 		end
 	end
 
@@ -215,7 +212,6 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def question_timeout
-
 		chanmsg "%s The answer is: %s" % [Format(:red,'Timeout!'), Format(:green,@question[:answer].first)]
 		@timeout_count += 1
 		
