@@ -106,7 +106,7 @@ class TriviaHints
 	end
 
 	def timeout_warn
-		if @hint_count == 0 or not @hint_str or get_answer.length < 5
+		if @hint_count == 0 or not @hint_str
 			@hint_str = get_answer.gsub(/[^ ]/, '*')
 		else 
 			unmask_hint
