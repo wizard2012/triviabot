@@ -43,7 +43,7 @@ class TriviaBot < Cinch::Bot
 	def load_questions
 		@questions = []
 
-		db = File.open('questions.txt','r');
+		db = File.open('questions/default.txt','r');
 		db.read.lines.each do |line|
 			@questions << Hash[ [:question, :answer].zip( line.strip.split("\t") ) ]
 		end
