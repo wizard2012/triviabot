@@ -112,13 +112,12 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def fire_event(event)
-		puts "event: " +String(event)
 		@trivia_plugins.each do |mod|
 			next unless mod.respond_to? event
 			begin
-				puts "firing: "+String(mod)
 				mod.send event
 			rescue
+				#@todo log this
 				puts $!,$@
 			end
 		end
