@@ -110,13 +110,13 @@ class TriviaHints
 
 	def timeout_warn
 		if @hint_count == 0 or not @hint_str
-			@hint_str = get_answer.gsub(/[^ ]/, '*')
+			@hint_str = get_answer.gsub(/[A-Za-z0-9]/, '*')
 		else 
 			unmask_hint
 		end
 
 		@hint_count += 1
-		@bot.chanmsg "%s: %s" % [Format(:yellow, "Hint"), @hint_str]
+		@bot.chanmsg "%s %d: %s" % [Format(:yellow, "Hint"), @hint_count, @hint_str]
 	end
 end
 
@@ -177,6 +177,21 @@ class TriviaBot < Cinch::Bot
 		send_question
 	end	
 
+	def start_question_in n
+		@question = nil
+		@question_start_wait = n
+	end
+
+	def start_question_delay
+		return unless @question_start_wait and @active
+		@question_start_wait -= 1
+
+		if @question_start_wait <= 0
+			@question_start_wait = nil
+			start_question
+		end
+	end
+
 	def start_question
 		next_question
 		@question_time = @question_time_limit
@@ -215,7 +230,7 @@ class TriviaBot < Cinch::Bot
 	end
 
 	def check_answer(m,t)
-		return unless @active
+		return unless active_question?
 		@timeout_count = 0
 		@question[:answer].each do |a|
 			if normalize_answer(a) == normalize_answer(t)
@@ -233,10 +248,10 @@ class TriviaBot < Cinch::Bot
 		if @kaos
 			remain = @question[:answer].size
 			chanmsg "Good job, %s! %d answers remain." % [nick,remain]
-			start_question if remain == 0
+			start_question_in 10 if remain == 0
 		else
 			chanmsg "%s %s wins!" % [Format(:blue,"Correct!"), nick]
-			start_question
+			start_question_in 10
 		end
 	end
 
@@ -256,8 +271,12 @@ class TriviaBot < Cinch::Bot
 		end
 	end
 
+	def active_question?
+		@active and @question
+	end
+
 	def check_question_time
-		return unless @active
+		return unless active_question?
 
 		@question_time -= 1
 	
@@ -285,12 +304,12 @@ class TriviaBot < Cinch::Bot
 		
 		fire_event :question_timeout
 
-		start_question unless game_timeout
+		start_question_in 10 unless game_timeout
 	end
 
 	def tick
 		fire_event :tick
-
+		start_question_delay
 		check_question_time
 	end
 end
