@@ -116,7 +116,7 @@ class TriviaHints
 		end
 
 		@hint_count += 1
-		@bot.chanmsg "%s: %s" % [Format(:yellow, "Hint"), @hint_str]
+		@bot.chanmsg "%s %d: %s" % [Format(:yellow, "Hint"), ,@hint_count, @hint_str]
 	end
 end
 
