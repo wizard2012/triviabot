@@ -110,13 +110,13 @@ class TriviaHints
 
 	def timeout_warn
 		if @hint_count == 0 or not @hint_str
-			@hint_str = get_answer.gsub(/[^ ]/, '*')
+			@hint_str = get_answer.gsub(/[A-Za-z0-9]/, '*')
 		else 
 			unmask_hint
 		end
 
 		@hint_count += 1
-		@bot.chanmsg "%s %d: %s" % [Format(:yellow, "Hint"), ,@hint_count, @hint_str]
+		@bot.chanmsg "%s %d: %s" % [Format(:yellow, "Hint"), @hint_count, @hint_str]
 	end
 end
 
